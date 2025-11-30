@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Điều khiển thiết bị thông minh</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #ffffff;
+            color: #333;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+
+        /* ======= FLEX LAYOUT ======= */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        /* ======= CARD CHUNG ======= */
+        .card {
+            width: 300px;
+            padding: 25px;
+            border-radius: 18px;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            transition: 0.25s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 5px 18px rgba(0,0,0,0.15);
+        }
+
+        /* ======= LỊCH SỬ ======= */
+        .history-box {
+            width: 370px;
+            padding: 20px;
+            border-radius: 18px;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            transition: 0.3s;
+        }
+
+        #history {
+            list-style: none;
+            padding-left: 0;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        #history li {
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            transition: 0.25s;
+        }
+
+        #history li:hover {
+            background: #e9e9e9;
+            transform: translateX(5px);
+        }
+
+        /*======== BUTTON ========*/
+        button {
+            width: 120px;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px;
+            transition: 0.25s;
+            font-weight: bold;
+            color: white;
+        }
+
+        .on {
+            background: #4CAF50;
+        }
+
+        .off {
+            background: #F44336;
+        }
+
+        button:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        /* ======= NÚT MỞ / ĐÓNG LỊCH SỬ ======= */
+        .toggle-btn {
+            margin-bottom: 12px;
+            background: #3f51b5;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🔌 Điều khiển thiết bị thông minh</h1>
+
+<div class="container">
+
+    <!-- CỘT TRÁI: ĐÈN + ĐIỀU HÒA -->
+    <div>
+        <div class="card">
+            <h2>💡 Đèn</h2>
+            <p id="status-light">Trạng thái: ...</p>
+            <button class="on" onclick="setLight('on')">Bật</button>
+            <button class="off" onclick="setLight('off')">Tắt</button>
+        </div>
+
+        <div class="card" style="margin-top:25px;">
+            <h2>❄️ Điều hòa</h2>
+            <p id="status-ac">Trạng thái: ...</p>
+            <button class="on" onclick="setAC('on')">Bật</button>
+            <button class="off" onclick="setAC('off')">Tắt</button>
+        </div>
+    </div>
+
+    <!-- CỘT PHẢI: LỊCH SỬ -->
+    <div class="history-box">
+        <button class="toggle-btn" onclick="toggleHistory()">📜 Hiện / Ẩn Lịch sử</button>
+
+        <h2>📘 Lịch sử thiết bị</h2>
+
+        <ul id="history">
+            <li>Đang tải...</li>
+        </ul>
+    </div>
+
+</div>
+
+<script>
+    const API = "http://localhost:5000";
+
+    /* ===== TRẠNG THÁI ĐÈN ===== */
+    function loadLight() {
+        fetch(`${API}/device/light`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("status-light").innerText =
+                    "Trạng thái: " + (data.status === "on" ? "Bật" : "Tắt");
+            });
+    }
+
+    function setLight(state) {
+        fetch(`${API}/device/light`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: state })
+        })
+        .then(() => { loadLight(); loadHistory(); });
+    }
+
+    /* ===== TRẠNG THÁI ĐIỀU HÒA ===== */
+    function loadAC() {
+        fetch(`${API}/device/ac`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("status-ac").innerText =
+                    "Trạng thái: " + (data.status === "on" ? "Bật" : "Tắt");
+            });
+    }
+
+    function setAC(state) {
+        fetch(`${API}/device/ac`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: state })
+        })
+        .then(() => { loadAC(); loadHistory(); });
+    }
+
+    /* ===== LỊCH SỬ ===== */
+    function loadHistory() {
+        fetch(`${API}/history`)
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById("history");
+                list.innerHTML = "";
+
+                data.forEach(item => {
+                    let li = document.createElement("li");
+                    const time = item.time ? item.time : '';
+                    li.innerText = time ? `${time} → ${item.history}` : item.history;
+                    list.appendChild(li);
+                });
+            });
+    }
+
+    /* ===== NÚT ĐÓNG / MỞ LỊCH SỬ ===== */
+    function toggleHistory() {
+        const box = document.getElementById("history");
+        box.style.display = (box.style.display === "none") ? "block" : "none";
+    }
+
+    loadLight();
+    loadAC();
+    loadHistory();
+</script>
+
+</body>
+</html>
